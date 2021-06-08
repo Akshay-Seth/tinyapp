@@ -57,11 +57,19 @@ app.get("/urls/new", (req, res) => {
   res.render("urls_news");
 });
 
+app.post("/urls/:shortURL/delete",(req, res) =>{
+  const Idtodelete = req.params.shortURL;
+  delete urlDatabase[Idtodelete];
+  res.redirect("/urls");
+})
+
 app.get("/urls/:shortURL",(req, res) =>{
     let shortURL = req.params.shortURL;
     const templateVars = { shortURL: shortURL, longURL: urlDatabase[shortURL]};
     res.render("urls_shows", templateVars);
 });
+
+
 app.get("/u/:shortURL", (req, res) => {
   let shortURL = req.params.shortURL;
   const longURL = urlDatabase[shortURL];

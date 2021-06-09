@@ -1,10 +1,12 @@
 const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
+const cookieParser = require("cookie-parser");
 
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
-
+app.set("view engine", "ejs");
+app.use(cookieParser());
 function generateRandomString() {
   const characters ='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   length = 6;
@@ -18,9 +20,6 @@ function generateRandomString() {
 }
 
 
-
-
-app.set("view engine", "ejs");
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -40,7 +39,10 @@ app.get("/hello", (req, res) => {
   });
 
 app.get("/urls", (req, res) =>{
-    const templateVars = { urls: urlDatabase}
+  const templateVars = {
+    username: req.cookies["user"],
+    urls: urlDatabase
+  };
     res.render("urls_index", templateVars);
 });
 
@@ -54,7 +56,10 @@ app.post("/urls", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-  res.render("urls_news");
+   const templateVars = {
+    username: req.cookies["user"],
+ };
+  res.render("urls_news",templateVars);
 });
 
 app.post("/urls/:shortURL/delete",(req, res) =>{
@@ -62,10 +67,26 @@ app.post("/urls/:shortURL/delete",(req, res) =>{
   delete urlDatabase[Idtodelete];
   res.redirect("/urls");
 })
+app.post("/login",(req,res) =>{
+  const ysername = req.body.username;
+  res.cookie("user",ysername);
+  console.log(ysername);
+  // const templateVars = {
+  //   username: req.cookies["user"],
+  //   urls: urlDatabase
+  // };
+  // res.render("urls_index", templateVars);
+  res.redirect("/urls");
+})
+app.post("/logout",(req,res)=>{
+  res.clearCookie("user");
+  res.redirect("/urls");
+})
 
 app.get("/urls/:shortURL",(req, res) =>{
     let shortURL = req.params.shortURL;
-    const templateVars = { shortURL: shortURL, longURL: urlDatabase[shortURL]};
+    const templateVars = { shortURL: shortURL, longURL: urlDatabase[shortURL],
+      username: req.cookies["user"]};
     res.render("urls_shows", templateVars);
 });
 

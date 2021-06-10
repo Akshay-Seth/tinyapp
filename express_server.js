@@ -1,7 +1,7 @@
 const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
-const cookieParser = require("cookie-parser");
+const cookieParser = require("cookie-session");
 const bcrypt = require('bcrypt');
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
@@ -96,7 +96,9 @@ app.get("/login",(req,res)=>{
 
 app.post("/login",(req,res) =>{
   const email = req.body.email;
-  const password = req.body.password;
+  const string = req.boy.password;
+  const hashedPassword = bcrypt.hashSync(string, 10);
+  const password = bcrypt.compareSync(string, hashedPassword);
   // const templateVars = {
   //   username: req.cookies["user"],
   //   urls: urlDatabase
@@ -114,7 +116,7 @@ app.post("/login",(req,res) =>{
   }
 
   // compare the user's password
-  if (foundUser.password !== password) {
+  if (password !== true) {
     // if the passwords don't match, send back an error response
     res.status(401).send('password is not correct');
   }
@@ -158,7 +160,9 @@ app.get("/register",(req,res)=>{
 });
 app.post("/register",(req,res)=>{
   const email = req.body.userID;
-  const password = req.body.password;
+  const string = req.boy.password;
+  const hashedPassword = bcrypt.hashSync(string, 10);
+  const password = hashedPassword
   const newID = generateid()
   const newUsers ={
     id:newID,

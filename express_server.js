@@ -66,7 +66,9 @@ app.get("/urls", (req, res) =>{
 app.post("/urls", (req, res) => {
   console.log(req.body);  // Log the POST request body to the console
   const newUrl = generateRandomString();
-  urlDatabase[newUrl] = req.body.longURL;
+  const long = req.body.longURL;
+  const id =req.cookies['userId'];
+  urlDatabase[newUrl] = {LongURL: long, userID: id};
   console.log(urlDatabase)
   console.log(200)
   res.send(`New url made for ${req.body.longURL}`);  // Respond with whatever is in ''

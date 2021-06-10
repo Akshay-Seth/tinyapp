@@ -38,9 +38,10 @@ const generateid =() =>{
 }
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW" },
+  i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
 };
+
 
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -56,7 +57,7 @@ app.get("/hello", (req, res) => {
 
 app.get("/urls", (req, res) =>{
   const templateVars = {
-    username: req.cookies["userId"],
+    username:req.cookies['userId'],
     urls: urlDatabase
   };
     res.render("urls_index", templateVars);
@@ -73,7 +74,7 @@ app.post("/urls", (req, res) => {
 
 app.get("/urls/new", (req, res) => {
    const templateVars = {
-    username: req.cookies["userId"],
+    username: req.cookies['userId'],
  };
   res.render("urls_news",templateVars);
 });
@@ -85,7 +86,7 @@ app.post("/urls/:shortURL/delete",(req, res) =>{
 })
 app.get("/login",(req,res)=>{
   const templateVars = {
-    username: req.cookies["userId"],
+    username: req.cookies['userId'],
     urls: urlDatabase
   };
   res.render("urls_login",templateVars);
@@ -116,19 +117,19 @@ app.post("/login",(req,res) =>{
     res.status(401).send('password is not correct');
   }
 
-  // set the cookie and redirect to the protected page
+  // set the cookie and redirect to the main page
   res.cookie('userId', foundUser.id);
   res.redirect("/urls");
 })
 app.post("/logout",(req,res)=>{
-  res.clearCookie("userId");
+  res.clearCookie('userId');
   res.redirect("/urls");
 })
 
 app.get("/urls/:shortURL",(req, res) =>{
     let shortURL = req.params.shortURL;
     const templateVars = { shortURL: shortURL, longURL: urlDatabase[shortURL],
-      username: req.cookies["userId"]};
+      username: req.cookies['userId']};
     res.render("urls_shows", templateVars);
 });
 
@@ -148,7 +149,7 @@ app.get("/u/:shortURL", (req, res) => {
 });
 app.get("/register",(req,res)=>{
   const templateVars = {
-    username: req.cookies["userId"],
+    username: req.cookies['userId'],
     urls: urlDatabase
   };
   res.render("urls_register",templateVars);

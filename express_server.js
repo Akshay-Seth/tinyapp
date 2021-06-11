@@ -4,6 +4,7 @@ const PORT = 8080; // default port 8080
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcrypt');
 const bodyParser = require("body-parser");
+const { getUserByEmail } = require('./helpers.js');
 app.use(bodyParser.urlencoded({extended: true}));
 app.set("view engine", "ejs");
 app.use(cookieSession({
@@ -29,7 +30,7 @@ const usersDatabase = {
   "user1RandomID": {
     id: "user1RandomID", 
     email: "user@example.com", 
-    password: "1"
+    password: "stuff"
   },
  "user2RandomID": {
     id: "user2RandomID", 
@@ -102,9 +103,8 @@ app.get("/login",(req,res)=>{
 
 app.post("/login",(req,res) =>{
   const email = req.body.email;
-  const string = req.boy.password;
-  const hashedPassword = bcrypt.hashSync(string, 10);
-  const password = bcrypt.compareSync(string, hashedPassword);
+  const password = req.body.password;
+  const hashedPassword = bcrypt.hashSync(password,10);
   // const templateVars = {
   //   username: req.cookies["user"],
   //   urls: urlDatabase
@@ -122,7 +122,7 @@ app.post("/login",(req,res) =>{
   }
 
   // compare the user's password
-  if (password !== true) {
+  if (bcrypt.compareSync(password,usersDatabase[foundUser].passsword)) {
     // if the passwords don't match, send back an error response
     res.status(401).send('password is not correct');
   }
@@ -166,7 +166,7 @@ app.get("/register",(req,res)=>{
 });
 app.post("/register",(req,res)=>{
   const email = req.body.userID;
-  const string = req.boy.password;
+  const string = req.body.password;
   const hashedPassword = bcrypt.hashSync(string, 10);
   const password = hashedPassword
   const newID = generateid()

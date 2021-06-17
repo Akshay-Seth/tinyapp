@@ -19,8 +19,13 @@ app.use(
 app.set("view engine", "ejs");
 
 // ROUTES
+app.get("/urls.json", (req, res) => {
+    res.json(urlDatabase);
+  });
 
-// / => homepage
+app.get("/hello", (req, res) => {
+    res.send("<html><body>Hello <b>World</b></body></html>\n");
+  });
 app.get("/", (req, res) => {
   if (req.session.user_id) {
     res.redirect("/urls");

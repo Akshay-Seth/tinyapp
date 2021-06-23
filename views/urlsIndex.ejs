@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" crossorigin="anonymous">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@1,300;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="css/style.css" />
+  <title>TinyApp - URL Index</title>
+</head>
+<body>
+  <% if (!user) user = {sites: {}} %>
+  <%- include('partials/_header.ejs') -%>
+  <div class="col-md-10 offset-md-1 my-3">
+    <h3 class="text-center">My URLs</h3>
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col" class="align-middle text-center">Short URL</th>
+          <th scope="col" class="align-middle text-center">Long URL</th>
+          <th scope="col" class="align-middle text-center">Visits</th>
+          <th scope="col" class="align-middle text-center">Created</th>
+          <th scope="col" class="align-middle text-center">Edit URL</th>
+          <th scope="col" class="align-middle text-center">Delete</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% for (let url in user.sites) { %>
+          <tr class="align-middle">
+            <td class="align-middle text-center"><a href="urls/<%= url %>"><%= url %></a></td>
+            <td class="align-middle text-center"><a href="<%= user.sites[url].urlLong %>"><%= user.sites[url].urlLong %></a></td>
+            <td class="align-middle text-center"><%= user.sites[url].visits %></td>
+            <td class="align-middle text-center"><%= user.sites[url].created %></td>
+            <td class="align-middle text-center"><a href="urls/<%= url %>"><button type="submit" class="btn btn-info">Edit</button></a></td>
+            <td class="align-middle text-center"><form method="POST" action="<%= url %>/delete"><button type="submit" class="btn btn-danger">Delete</button></form></td>
+          </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+  <!-- Bootstrap JS -->
+  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+</body>
+</html>

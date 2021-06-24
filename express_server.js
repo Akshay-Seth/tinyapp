@@ -128,7 +128,7 @@ app.get('/urls', (req, res) => {
     const templateVars = {
       user: usersDB[req.session.uid],
     };
-    res.render('urlIndex', templateVars);
+    res.render('urlsIndex', templateVars);
   }
 });
 // create a new url route
@@ -139,7 +139,7 @@ app.get('/urls/new', (req, res) => {
     const templateVars = {
       user: usersDB[req.session.uid],
     };
-    res.render('urls_new', templateVars);
+    res.render('urls_news', templateVars);
   }
 });
 // examine details of url
@@ -156,6 +156,9 @@ app.get('/urls/:shortURL', (req, res) => {
       site: linkBook[req.params.shortURL],
       shortURL: req.params.shortURL,
     };
+    if (req.session.uid === usersDB[shortURL].uid) {
+      res.redirect(`/urls/${shortURL}`);
+    }
     res.render('urlExamine', templateVars);
   }
 });

@@ -205,11 +205,12 @@ app.post('/logout', (req, res) => {
 // register new user post route
 app.post('/register', (req, res) => {
   const uid = genRandomString();
+  const matchingemail =Object.keys(usersDB);
   // if the req fields are filled, error
   if (!req.body.email || !req.body.password) {
     res.render('errorPage', { status: 400, error: 'Missing Required Information!' });
     // if the known emails include this email, error
-  } else if (emails.includes(req.body.email)) {
+  } else if (!req.body.email === matchingemail) {
     res.render('errorPage', { status: 403, error: 'Email already in Database!' });
     // add the new user by class
   } else {

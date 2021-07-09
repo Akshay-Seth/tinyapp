@@ -1,24 +1,33 @@
-const QuickEncrypt = require('quick-encrypt');
-
-const validateURL = (url) => (url.match(/^(https:\/\/|http:\/\/)/) ? url : `https://${url}`);
-
-
-const genRandomString = () => Math.random().toString(36).substring(3).slice(-5);
-
-
-const dateParser = (date) => {
-  const d = new Date(date);
-  return `${d.getUTCDay()}
-  /${d.getMonth()}
-  /${d.getFullYear()}
-  /${d.getHours()}
-  :${d.getMinutes()}
-  :${(`0${d.getSeconds()}`).slice(-2)}`.replace(/\s/g, '');
+const getUserByEmail = (email, database) => {
+  for (const user in database) {
+    if (database[user].email === email) {
+      return database[user];
+    }
+  }
+  return undefined;
 };
 
-// Hashes the password 
-const hashPass = (str, publicKey) => QuickEncrypt.encrypt(str, publicKey);
+const generateRandomString = () => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let randomString = '';
+  
+  while (randomString.length < 6) {
+    randomString += chars[Math.floor(Math.random() * chars.length)];
+  }
 
-module.exports = {
-  validateURL, genRandomString, dateParser, hashPass,
+  return randomString;
 };
+
+const urlsForUser = (id, database) => {
+  let userUrls = {};
+
+  for (const shortURL in database) {
+    if (database[shortURL].userID === id) {
+      userUrls[shortURL] = database[shortURL];
+    }
+  }
+
+  return userUrls;
+};
+
+module.exports = { getUserByEmail, generateRandomString, urlsForUser };

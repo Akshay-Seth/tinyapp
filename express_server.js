@@ -1,281 +1,212 @@
+
+// app config
 const express = require('express');
-const bodyParser = require('body-parser');
-const cookieSession = require('cookie-session');
-const quickEncrypt = require('quick-encrypt');
-const {
-  validateURL, genRandomString, dateParser, hashPass,
-} = require('./helperFuntions');
-
-const keys = quickEncrypt.generate(1024);
-const publicKey = keys.public;
-const privateKey = keys.private;
-
 const app = express();
 const PORT = 8080;
 
-// use ejs engine
+const bodyParser = require('body-parser');
+app.use(bodyParser.urlencoded({extended: true}));
+
+const cookieSession = require('cookie-session');
+app.use(cookieSession({name: 'session', secret: 'grey-rose-juggling-volcanoes'}));
+
+const bcrypt = require('bcrypt');
+
 app.set('view engine', 'ejs');
-// setup body parser, get all tags
-app.use(bodyParser.urlencoded({ extended: true }));
-// public mapping of /img for images
-app.use('/img', express.static(`${__dirname}/public/img`));
-// public mapping of /public
-app.use(express.static('public'));
-// set keys for sessions
-app.use(cookieSession({
-  name: 'session',
-  keys: ['key1', 'key2'],
-}));
 
+// functions
+const { getUserByEmail, generateRandomString, urlsForUser } = require('./helperFuntions');
 
-// user class initiates uid, email, hash, and date created
-class User {
-  constructor(uid, email, passHash) {
-    this.uid = uid;
-    this.email = email;
-    this.passHash = passHash;
-    this.created = Date.now();
-    this.sites = {};
-  }
-}
+// variables
+const urlDatabase = {};
+const users = {};
 
-// H A R D C O D E D   U S E R   D A T A //////////////////
-// two sample user accounts for debugging
-const usersDB = {
-  u1ou: {
-    uid: 'u1ou',
-    email: 'clint.pearce@rocketmail.com',
-    passHash: hashPass('test', publicKey),
-    created: Date.now(),
-    sites: {
-      lhL: {
-        urlShort: 'lhL',
-        urlLong: 'https://www.lighthouselabs.ca',
-        visits: 0,
-        created: dateParser(Date.now()),
-      },
-      goo: {
-        urlShort: 'goo',
-        urlLong: 'https://www.google.ca',
-        visits: 0,
-        created: dateParser(Date.now()),
-      },
-    },
-  },
-  test: {
-    uid: 'test',
-    email: 'admin@ironmantle.ca',
-    passHash: hashPass('password', publicKey),
-    created: Date.now(),
-    sites: {
-      omb: {
-        urlShort: 'omb',
-        urlLong: 'https://ombi.ironmantle.ca',
-        visits: 0,
-        unique: 0,
-        created: dateParser(Date.now()),
-      },
-      go0: {
-        urlShort: 'go0',
-        urlLong: 'https://www.google.ca',
-        visits: 0,
-        unique: 0,
-        created: dateParser(Date.now()),
-      },
-    },
-  },
-};
-// a map to map user accounts and sites, to easy to read objects
-const emails = [...Object.keys(usersDB).map((user) => usersDB[user].email)];
-const linkBook = {};
-const linkBookBuilder = () => {
-  Object.keys(usersDB).map((user) => {
-    Object.keys(usersDB[user].sites).forEach((site) => {
-      linkBook[site] = usersDB[user].sites[site];
-      linkBook[site].user = user;
-    });
-  });
-};
-// run linkBookBuilder to initialize the linkBook Object
-linkBookBuilder();
+////////////////////////////////////////////////////////////////////////
+/*
+ROUTING
+*/
 
+// root - GET
+// redirects to /urls if logged in, otherwise to /login
 app.get('/', (req, res) => {
-  if (!req.session.uid) {
+  if (req.session.userID) {
+    res.redirect('/urls');
+  } else {
     res.redirect('/login');
-  } else {
-    res.redirect('/urls');
   }
 });
 
-
-// login to tinyApp
-app.get('/login', (req, res) => {
-  if (req.session.uid) res.redirect('urls');
-  res.render('login');
-});
-
-// R E G I S T E R   G E T
-// register a new account
-app.get('/register', (req, res) => {
-  res.render('register');
-});
-
+// urls index page - GET
+// shows urls that belong to the user, if they are logged in
 app.get('/urls', (req, res) => {
-  linkBookBuilder();
-  if (!req.session.uid) {
-    res.render('errorPage', { status: 400, error: 'Not Logged In!' });
-  } else {
-    const templateVars = {
-      user: usersDB[req.session.uid],
-    };
-    res.render('urlsIndex', templateVars);
+  const userID = req.session.userID;
+  const userUrls = urlsForUser(userID, urlDatabase);
+  const templateVars = { urls: userUrls, user: users[userID] };
+  
+  if (!userID) {
+    res.statusCode = 401;
   }
-});
-// create a new url route
-app.get('/urls/new', (req, res) => {
-  if (!req.session.uid) {
-    res.render('login');
-  } else {
-    const templateVars = {
-      user: usersDB[req.session.uid],
-    };
-    res.render('urls_news', templateVars);
-  }
-});
-// examine details of url
-app.get('/urls/:shortURL', (req, res) => {
-  if (!req.session.uid) {
-    res.render('errorPage', { status: 400, error: 'You need to be logged in to do that!' });
-  } else if (!Object.keys(linkBook).includes(req.params.shortURL)) {
-    res.render('errorPage', { status: 404, error: 'Sorry that link doesn\'t exist!' });
-  } else if (req.session.uid !== linkBook[req.params.shortURL].user) {
-    res.render('errorPage', { status: 401, error: 'Sorry you don\'t own this link!' });
-  } else {
-    const templateVars = {
-      user: usersDB[req.session.uid],
-      site: linkBook[req.params.shortURL],
-      shortURL: req.params.shortURL,
-    };
-    if (req.session.uid === usersDB[shortURL].uid) {
-      res.redirect(`/urls/${shortURL}`);
-    }
-    res.render('urlExamine', templateVars);
-  }
+  
+  res.render('urls_index', templateVars);
 });
 
-// error page if not directed automatically
-app.get('/error', (req, res) => {
-  res.render('errorPage');
-});
-
-// Routes for all webpages 
-
-// post login credentials
-app.post('/login', (req, res) => {
-  // if the info isn't filled in
-  if (!req.body.email || !req.body.password) {
-    res.render('errorPage', { status: 400, error: 'All Data Fields Must Be Filled Out!' });
-  } else {
-    // match the email and plaintext password to the
-    // unencrypted password matching this email
-    try {
-      const emailMatch = Object.keys(usersDB)
-        .filter((user) => usersDB[user].email === req.body.email);
-      const passwordHash = hashPass(req.body.password, publicKey);
-      if (
-        quickEncrypt.decrypt(passwordHash, privateKey)
-        === quickEncrypt.decrypt(usersDB[emailMatch].passHash, privateKey)) {
-        req.session.uid = usersDB[emailMatch].uid;
-        res.redirect('/urls');
-      } else {
-        res.render('errorPage', { status: 401, error: 'Wrong Credentials!' });
-      }
-    } catch (err) {
-      res.render('errorPage', { status: 401, error: 'Wrong Credentials!' });
-    }
-  }
-});
-
-// logout and clear cookie session
-app.post('/logout', (req, res) => {
-  req.session = null;
-  res.redirect('/login');
-});
-
-// register new user post route
-app.post('/register', (req, res) => {
-  const uid = genRandomString();
-  const matchingemail =Object.keys(usersDB);
-  // if the req fields are filled, error
-  if (!req.body.email || !req.body.password) {
-    res.render('errorPage', { status: 400, error: 'Missing Required Information!' });
-    // if the known emails include this email, error
-  } else if (!req.body.email === matchingemail) {
-    res.render('errorPage', { status: 403, error: 'Email already in Database!' });
-    // add the new user by class
-  } else {
-    usersDB[uid] = new User(
-      uid,
-      req.body.email,
-      hashPass(req.body.password, publicKey),
-    );
-    req.session.uid = uid;
-    res.redirect('/urls');
-  }
-});
-
-// post a new url to the current logged in account
+// new url creation - POST
+// adds new url to database, redirects to short url page
 app.post('/urls', (req, res) => {
-  if (!req.session.uid) res.render({ status: 400, error: 'You need to be logged in to do that!' });
-  const shortCode = genRandomString();
-  usersDB[req.session.uid].sites[shortCode] = {
-    urlShort: shortCode,
-    urlLong: validateURL(req.body.longURL),
-    visits: 0,
-    created: dateParser(Date.now()),
-  };
-  // rebuild the link database
-  linkBookBuilder();
-  res.redirect(`/urls/${shortCode}`);
-});
-// delete url, not DELETE method but same results
-// manually delete via object deletion
-app.post('/:shortURL/delete', (req, res) => {
-  if (req.session.uid === linkBook[req.params.shortURL].user) {
-    delete usersDB[req.session.uid].sites[req.params.shortURL];
-    res.redirect('/urls');
+  if (req.session.userID) {
+    const shortURL = generateRandomString();
+    urlDatabase[shortURL] = {
+      longURL: req.body.longURL,
+      userID: req.session.userID
+    };
+    res.redirect(`/urls/${shortURL}`);
   } else {
-    res.render({ status: 401, error: 'All Your Links do NOT Belong To Us!' });
-  }
-});
-// update url, not PUT method but same results
-// manually reassign the target full url
-app.post('/:shortURL/update', (req, res) => {
-  if (!req.session.uid) {
-    res.render({ status: 400, error: 'You need to be logged in!' });
-    // if current user matches the shortURL owner, update it
-  } else if (req.session.uid === linkBook[req.params.shortURL].user) {
-    usersDB[req.session.uid].sites[req.params.shortURL].urlLong = req.body.newURL;
-    res.redirect('/urls');
-    // if the current user and shortURL owner don't match, error
-  } else {
-    res.render({ status: 401, error: 'All Your Links do NOT Belong To Us!' });
+    const errorMessage = 'You must be logged in to do that.';
+    res.status(401).render('urls_error', {user: users[req.session.userID], errorMessage});
   }
 });
 
-// go to target longURL of short link
+// new url creation page - GET
+// validates if the user is logged in before displaying page
+app.get('/urls/new', (req, res) => {
+  if (req.session.userID) {
+    const templateVars = {user: users[req.session.userID]};
+    res.render('urls_new', templateVars);
+  } else {
+    res.redirect('/login');
+  }
+});
+
+// short url page - GET
+// shows details about the url if it belongs to user
+app.get('/urls/:shortURL', (req, res) => {
+  const shortURL = req.params.shortURL;
+  const userID = req.session.userID;
+  const userUrls = urlsForUser(userID, urlDatabase);
+  const templateVars = { urlDatabase, userUrls, shortURL, user: users[userID] };
+
+  if (!urlDatabase[shortURL]) {
+    const errorMessage = 'This short URL does not exist.';
+    res.status(404).render('urls_error', {user: users[userID], errorMessage});
+  } else if (!userID || !userUrls[shortURL]) {
+    const errorMessage = 'You are not authorized to see this URL.';
+    res.status(401).render('urls_error', {user: users[userID], errorMessage});
+  } else {
+    res.render('urls_show', templateVars);
+  }
+});
+
+// url edit - POST
+// updates longURL if url belongs to user
+app.post('/urls/:shortURL', (req, res) => {
+  const shortURL = req.params.shortURL;
+
+  if (req.session.userID  && req.session.userID === urlDatabase[shortURL].userID) {
+    urlDatabase[shortURL].longURL = req.body.updatedURL;
+    res.redirect(`/urls`);
+  } else {
+    const errorMessage = 'You are not authorized to do that.';
+    res.status(401).render('urls_error', {user: users[req.session.userID], errorMessage});
+  }
+});
+
+// delete url - POST
+// deletes url from database if it belongs to user
+app.post('/urls/:shortURL/delete', (req, res) => {
+  const shortURL = req.params.shortURL;
+
+  if (req.session.userID  && req.session.userID === urlDatabase[shortURL].userID) {
+    delete urlDatabase[shortURL];
+    res.redirect('/urls');
+  } else {
+    const errorMessage = 'You are not authorized to do that.';
+    res.status(401).render('urls_error', {user: users[req.session.userID], errorMessage});
+  }
+});
+
+// redirecting - GET
+// redirects to the long (actual) url
 app.get('/u/:shortURL', (req, res) => {
-  linkBookBuilder();
-  // if the shortened url doesn't exist, error
-  if (!Object.keys(linkBook).includes(req.params.shortURL)) {
-    res.render('errorPage', { status: 404, error: 'That URL Does Not Exist Here Friend!' });
+  if (urlDatabase[req.params.shortURL]) {
+    res.redirect(urlDatabase[req.params.shortURL].longURL);
   } else {
-    usersDB[linkBook[req.params.shortURL].user].sites[req.params.shortURL].visits += 1;
-    res.redirect(usersDB[linkBook[req.params.shortURL].user].sites[req.params.shortURL].urlLong);
+    const errorMessage = 'This short URL does not exist.';
+    res.status(404).render('urls_error', {user: users[req.session.userID], errorMessage});
   }
 });
 
-// Starts the listening
+// login page - GET
+// redirects to urls index page if already logged in
+app.get('/login', (req, res) => {
+  if (req.session.userID) {
+    res.redirect('/urls');
+    return;
+  }
+
+  const templateVars = {user: users[req.session.userID]};
+  res.render('urls_login', templateVars);
+});
+
+// logging in - POST
+// redirects to urls index page if credentials are valid
+app.post('/login', (req, res) => {
+  const user = getUserByEmail(req.body.email, users);
+
+  if (user && bcrypt.compareSync(req.body.password, user.password)) {
+    req.session.userID = user.userID;
+    res.redirect('/urls');
+  } else {
+    const errorMessage = 'Login credentials not valid. Please make sure you enter the correct username and password.';
+    res.status(401).render('urls_error', {user: users[req.session.userID], errorMessage});
+  }
+});
+
+// logging out - POST
+// clears cookies and redirects to urls index page
+app.post('/logout', (req, res) => {
+  res.clearCookie('session');
+  res.clearCookie('session.sig');
+  res.redirect('/urls');
+});
+
+// registration page - GET
+// redirects to urls index page if already logged in
+app.get('/register', (req, res) => {
+  if (req.session.userID) {
+    res.redirect('/urls');
+    return;
+  }
+
+  const templateVars = {user: users[req.session.userID]};
+  res.render('urls_registration', templateVars);
+});
+
+// registering - POST
+// redirects to urls index page if credentials are valid
+app.post('/register', (req, res) => {
+  if (req.body.email && req.body.password) {
+
+    if (!getUserByEmail(req.body.email, users)) {
+      const userID = generateRandomString();
+      users[userID] = {
+        userID,
+        email: req.body.email,
+        password: bcrypt.hashSync(req.body.password, 10)
+      };
+      req.session.userID = userID;
+      res.redirect('/urls');
+    } else {
+      const errorMessage = 'Cannot create new account, because this email address is already registered.';
+      res.status(400).render('urls_error', {user: users[req.session.userID], errorMessage});
+    }
+
+  } else {
+    const errorMessage = 'Empty username or password. Please make sure you fill out both fields.';
+    res.status(400).render('urls_error', {user: users[req.session.userID], errorMessage});
+  }
+});
+
+// server listen
 app.listen(PORT, () => {
-  console.log(`TinyApps listening on port ${PORT}!`);
+  console.log(`Example app listening on port ${PORT}`);
 });

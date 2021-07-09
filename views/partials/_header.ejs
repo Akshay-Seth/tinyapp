@@ -1,33 +1,27 @@
 <header>
-  <!-- If the user is logged in, change the header -->
-  <% try { %>
-  <%   email = user.email %>
   <nav class="navbar navbar-expand-md navbar-dark bg-success">
-    <a class="navbar-brand mx-1" href="/urls">TinyApp</a>
+    <a class="navbar-brand" href="/urls">TinyApp</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
     <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
       <div class="navbar-nav">
         <a class="nav-item nav-link" href="/urls">My URLs</a>
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
       </div>
     </div>
-    <br>
-    <form class="form-inline" method="POST" action="/logout" >
-      <div class="input-group">
-        <span class=" p-2"><small>Logged in as:</small> <%= email %></span>
+    <% if (!user) { %>
+      <div>
+        <a class="btn btn-primary" href="/login">Login</a>
+        <a class="btn btn-primary" href="/register">Register</a>
       </div>
-      <button class="input-group btn btn-warning" type="submit">Log Off</button>
+    <% } else { %>
+    <form class="form-inline my-1" action="/logout" method="POST">
+      <div>
+        Logged in as: <%= user.email %>
+        <button type="submit" class="btn btn-outline-primary ml-3">Logout</button>
+      </div>
     </form>
-    <% } catch (err) { %>
-    <nav class="navbar navbar-expand-md navbar-dark bg-info">
-      <a class="navbar-brand mx-1" href="/urls">TinyApp</a>
-      <br>
-      <div class="input-group">
-        <span class=" p-2">Not Logged in!</span>
-        <button href="/login">Login</button>
-        <button href="/register">Register</button>
-      </div>
-      <a href="/login"><button class="input-group btn btn-warning">Log In</button></a>
     <% } %>
   </nav>
 </header>
-  

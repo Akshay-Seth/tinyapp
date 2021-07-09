@@ -4,9 +4,9 @@ TinyApp is a full stack web application built with Node and Express that allows 
 
 ## Final Product
 
-!["Screenshot of urls page"](https://github.com/berk-ozer/tinyapp/blob/master/docs/urls-page.png?raw=true)
+!["Screenshot of urls page"](https://raw.githubusercontent.com/BeamMeup-fail/tinyapp/main/images/image2.PNG)
 
-!["Screenshot of registration page"](https://github.com/berk-ozer/tinyapp/blob/master/docs/registration-page.png?raw=true)
+!["Screenshot of registration page"](https://raw.githubusercontent.com/BeamMeup-fail/tinyapp/main/images/image4.PNG)
 
 !["Screenshot of new url page"](https://raw.githubusercontent.com/BeamMeup-fail/tinyapp/main/images/image1.PNG)
 
